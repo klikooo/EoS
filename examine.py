@@ -224,7 +224,6 @@ def show_pd_analysis(data, provider, title = None):
 
 
 	sns.set_style("whitegrid")
-	sns.set(font_scale=1.5)
 	plt.figure()
 	ax = sns.boxplot(data=dfPackets, palette="Set3")
 	ax.set(xlabel='Protocol', ylabel='Packets')
@@ -264,32 +263,93 @@ def test_analysis(data):
 	providers = ['AS9143 Ziggo B.V.', 'AS8737 Koninklijke KPN N.V.'] 
 	for provider in providers:
 		show_pd_analysis(data, provider)
-		#histogram_as(data, provider)
+		histogram_as(data, provider)
 
 
 
 
 
+def unique_ip_by_provider(data, provider):
+	providerData = get_as(data, provider)
+	IPs = []
+	for entry in providerData:
+		IPs.append( str(entry[TARGET_IP]) )
+	return len(IPs), len(set(IPs))
+
+def unique_ip_by_land(data, land):
+	IPs = []
+	for entry in data:
+		if entry[COUNTRY] == land:
+			IPs.append( str(entry[TARGET_IP]))
+	return len(IPs), len(set(IPs))
 
 
 
+def unique_attacks_provider(data, title):
+	providers = ['AS9143 Ziggo B.V.', 'AS8737 Koninklijke KPN N.V.', 'AS60781 LeaseWeb B.V.'] 
+	serie = {}
+	for provider in providers:
+		total, unique_attack = unique_ip_by_provider(data, provider)
+		serie[provider] = pd.Series(unique_attack / total * 100.0)
+	df = pd.DataFrame(serie)
+	sns.set_style("whitegrid")
+	plt.figure()
+	ax = sns.barplot(data=df, palette="Set3")
+	ax.set(xlabel='Provider', ylabel='Percentage')
+	ax.set_title(title)
+
+	print serie
+
+def unique_attacks(data, title):
+	countries = ['United States', 'China', 'France', 'United Kingdom', 'Germany', 'Canada', 'Netherlands']
+	serie = {}
+	for country in countries:
+		total, unique_attack = unique_ip_by_land(data, country)
+		serie[country] = pd.Series(unique_attack / total * 100.0)
+	df = pd.DataFrame(serie)
+
+	sns.set_style("whitegrid")
+	plt.figure()
+	ax = sns.barplot(data=df, palette="Set3")
+	ax.set(xlabel='Country', ylabel='Percentage')
+	ax.set_title(title)
+
+
+	print serie
 
 
 
-
-
-
-
-
+	
 print 'Loading data'
 data, ips = load_file('/media/rico/OS_Install/Documents and Settings/Rico/Mijn documenten/MATLAB/combined.csv')
 print 'Loaded data'
+sns.set(font_scale=1.3)
 
 
-#analysis_as(data)
-calc_service_types(data)
-test_analysis(data)
-#print_countries(data)
+
+
+
+##################
+#Unique attacks
+##################
+unique_attacks(data, 'Percentage of unique targeted IP addresses per country')
+unique_attacks_provider(data, 'Percentage of unique targeted IP addresses by provider')
+
+
+###################
+# Boxplot + histograms sevice types
+###################
+#calc_service_types(data)
+#test_analysis(data)
+
+
+
+
+
+#analysis_as(data, is_nl)
+
+
+print_countries(data)
 #print_years(data)
 #calc_service_types(data)
 
